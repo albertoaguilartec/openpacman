@@ -1,6 +1,6 @@
 # SPEC 01 — 4 Fantasmas con Comportamientos Únicos y Modo Asustado
 
-> **Status:** Draft
+> **Status:** Approved
 > **Depends on:** None
 > **Date:** 2026-08-20
 > **Objective:** Implementar 4 fantasmas con comportamientos diferenciados (hunter, ambusher, 2× random) y modo asustado activado por Power Pellets.

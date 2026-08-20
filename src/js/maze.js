@@ -52,11 +52,21 @@ const MAZE = MAZE_STR.map( ( row ) => row.split( '' ).map( parseTile ) );
 const TUNNEL_ROW = 14;
 const PACMAN_START = { x: 13, y: 23 };
 const GHOST_STARTS = [
-  { x: 13, y: 14, kind: 'hunter' }, // dentro de la pen
-  { x: 14, y: 14, kind: 'random' }, // dentro de la pen
+  { x: 13, y: 14, kind: 'hunter' },   // Blinky — persigue agresivamente
+  { x: 14, y: 14, kind: 'random' },   // Pinky — movimiento aleatorio
+  { x: 13, y: 12, kind: 'ambusher' }, // Inky — prioriza posiciones estratégicas
+  { x: 14, y: 12, kind: 'random' },   // Clyde — movimiento aleatorio
+];
+
+const POWER_PELLET_POSITIONS = [
+  { x: 1, y: 5 },
+  { x: 26, y: 5 },
+  { x: 1, y: 29 },
+  { x: 26, y: 29 },
 ];
 
 window.MAZE = MAZE;
 window.TUNNEL_ROW = TUNNEL_ROW;
 window.PACMAN_START = PACMAN_START;
 window.GHOST_STARTS = GHOST_STARTS;
+window.POWER_PELLET_POSITIONS = POWER_PELLET_POSITIONS;
