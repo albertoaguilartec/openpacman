@@ -1,6 +1,6 @@
 # SPEC 02 — Salida de los fantasmas de la jaula
 
-> **Status:** Approved
+> **Status:** Implemented
 > **Depends on:** SPEC 01
 > **Date:** 2026-08-21
 > **Objective:** Sacar a los fantasmas de la jaula al mapa mediante un estado de salida guiada ('house' → 'exiting' → 'normal'), con salida escalonada al iniciar partida e inmediata al reaparecer.

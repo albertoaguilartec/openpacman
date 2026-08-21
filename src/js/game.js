@@ -13,6 +13,10 @@ const OPPOSITE = { left: 'right', right: 'left', up: 'down', down: 'up' };
 const PACMAN_SPEED = 0.125; // 1/8 celda/frame -> alinea cada 8 frames
 const GHOST_SPEED = 0.1;    // 1/10 celda/frame
 
+// Salida de la jaula (SPEC 02).
+const EXIT_ROW = 11;              // primera fila fuera de la jaula
+const RELEASE_DELAY_FRAMES = 120; // ~2 s entre salidas escalonadas a 60 fps
+
 // Crea una partida nueva. Copia MAZE (pristino) a game.grid para poder comer
 // dots sin destruir el original, y reiniciar.
 function createGame() {
@@ -44,12 +48,14 @@ function createGame() {
       nextDir: null,
       speed: PACMAN_SPEED,
     },
-    ghosts: GHOST_STARTS.map( ( g ) => ( {
+    ghosts: GHOST_STARTS.map( ( g, i ) => ( {
       x: g.x,
       y: g.y,
       dir: 'up',
       speed: GHOST_SPEED,
       kind: g.kind,
+      houseState: 'house',                    // 'house' | 'exiting' | 'normal'
+      releaseTimer: i * RELEASE_DELAY_FRAMES, // escalonado por indice
     } ) ),
   };
 }
@@ -191,6 +197,31 @@ function moveGhost( game, g ) {
   wrapTunnel( g, width );
 }
 
+// Ruta guiada de salida de la jaula (SPEC 02): avanzar hacia la columna de la
+// puerta (13 o 14) y subir hasta EXIT_ROW. No usa decideGhost().
+function moveExitingGhost( game, g ) {
+  const width = game.grid[ 0 ].length;
+
+  if ( aligned( g.x ) && aligned( g.y ) ) {
+    g.x = Math.round( g.x );
+    g.y = Math.round( g.y );
+
+    // Llego al pasillo sobre la puerta: pasa a IA normal.
+    if ( g.y === EXIT_ROW ) {
+      g.houseState = 'normal';
+      return;
+    }
+
+    const col = g.x <= 13 ? 13 : 14;
+    g.dir = g.x === col ? 'up' : ( g.x < col ? 'right' : 'left' );
+  }
+
+  const d = DIRS[ g.dir ];
+  g.x += d.x * g.speed;
+  g.y += d.y * g.speed;
+  wrapTunnel( g, width );
+}
+
 function resetPositions( game ) {
   const p = game.pacman;
   p.x = PACMAN_START.x;
@@ -201,6 +232,9 @@ function resetPositions( game ) {
     g.x = GHOST_STARTS[ i ].x;
     g.y = GHOST_STARTS[ i ].y;
     g.dir = 'up';
+    // Salen todos de inmediato tras perder vida (SPEC 02).
+    g.houseState = 'exiting';
+    g.releaseTimer = 0;
   } );
 }
 
@@ -210,7 +244,16 @@ function collides( a, b ) {
 
 function update( game ) {
   movePacman( game );
-  game.ghosts.forEach( ( g ) => moveGhost( game, g ) );
+  game.ghosts.forEach( ( g ) => {
+    if ( g.houseState === 'normal' ) {
+      moveGhost( game, g );
+    } else if ( g.houseState === 'house' ) {
+      g.releaseTimer--;
+      if ( g.releaseTimer <= 0 ) g.houseState = 'exiting';
+    } else {
+      moveExitingGhost( game, g );
+    }
+  } );
 
   // Decrementar timer de modo asustado.
   if ( game.scaredMode ) {
@@ -224,12 +267,14 @@ function update( game ) {
     const g = game.ghosts[ i ];
     if ( collides( game.pacman, g ) ) {
       if ( game.scaredMode ) {
-        // Comer fantasma asustado.
+        // Comer fantasma asustado: reaparece y sale por la puerta de inmediato.
         game.score += 200 * Math.pow( 2, game.scaredGhostEaten );
         game.scaredGhostEaten++;
         g.x = GHOST_STARTS[ i ].x;
         g.y = GHOST_STARTS[ i ].y;
         g.dir = 'up';
+        g.houseState = 'exiting';
+        g.releaseTimer = 0;
       } else {
         // Fantasma normal mata a Pacman.
         game.lives--;
